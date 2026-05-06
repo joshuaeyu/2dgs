@@ -1,7 +1,8 @@
 
 import cv2
-from metrics import *
 from PIL import Image
+
+from metrics import *
 
 ## Image and domain helper functions
 
@@ -81,7 +82,7 @@ def render_gaussians(gaussians, domain_grid):
     output = torch.sum(contribs, dim=0) / (torch.sum(pdf, dim=0)[...,None] + 1e-9) # (H,W,3)
     return output
 
-def loss_fn(prediction, target, recon_type='l2', ssim_weight=0.1):
+def loss_fn(prediction, target, recon_type='l1', ssim_weight=0.1):
     """L1 or L2 loss with optional SSIM loss."""
     if recon_type == 'l1':
         loss = torch.nn.functional.l1_loss(prediction, target)

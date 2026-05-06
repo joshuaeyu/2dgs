@@ -1,10 +1,10 @@
+from datetime import datetime
 import json
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import os
 import torch
-from datetime import datetime
 from tqdm import tqdm
 
 from gs2d import *

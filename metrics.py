@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-import torch
 from skimage.measure import shannon_entropy as sk_shannon_entropy
+import torch
 
 def ssim(x, y):
     """Structural similarity."""
