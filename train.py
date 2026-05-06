@@ -11,7 +11,7 @@ from tqdm import tqdm
 from gs2d import *
 from metrics import *
 
-def train(target_path, out_width, n_gaussians, epochs):
+def train(target_path, n_gaussians=400, out_width=200, epochs=200):
     print("-"*40)
 
     # Set device
@@ -98,19 +98,18 @@ def train(target_path, out_width, n_gaussians, epochs):
         train_stats['loss'].append(loss.item())
         train_stats['psnr'].append(snr.item())
         train_stats['ssim'].append(ssi.item())
+        train_stats['loss_final'] = train_stats['loss'][-1]
+        train_stats['psnr_final'] = train_stats['psnr'][-1]
+        train_stats['ssim_final'] = train_stats['ssim'][-1]
+        # Save current stats
+        with open(f"{run_dir}/stats.json", 'w') as f:
+            json.dump(train_stats, f, indent=4)
         # Save current output
         if (epoch+1) % epochs_per_frame == 0 or epoch == epochs-1:
             output_plot = output.detach().cpu().numpy().clip(0,1)
             anim_frames.append([anim_ax.imshow(output_plot)])
         if (save_indv_frames_every > 0 and (epoch+1) % save_indv_frames_every == 0) or epoch == epochs-1:
             anim_fig.savefig(f"{run_dir}/epochs/epoch{epoch+1:05d}.png")
-
-    # Save stats
-    with open(f"{run_dir}/stats.json", 'w') as f:
-        train_stats['loss_final'] = train_stats['loss'][-1]
-        train_stats['psnr_final'] = train_stats['psnr'][-1]
-        train_stats['ssim_final'] = train_stats['ssim'][-1]
-        json.dump(train_stats, f, indent=4)
 
     # Save GIF
     anim = animation.ArtistAnimation(anim_fig, anim_frames)
@@ -131,6 +130,7 @@ def train(target_path, out_width, n_gaussians, epochs):
     curves_fig.savefig(f"{run_dir}/loss_ssim.png")
 
     print(f"Training outputs saved to: {run_dir}")
+    return train_stats
 
 if __name__=="__main__":
     # Run train() directly from command line
@@ -141,4 +141,4 @@ if __name__=="__main__":
     parser.add_argument('--epochs', required=False, default=200, type=int)
     args = parser.parse_args()
 
-    train(args.target_path, args.out_width, args.n_gaussians, args.epochs)
+    train(args.target_path, args.n_gaussians, args.out_width, args.epochs)
