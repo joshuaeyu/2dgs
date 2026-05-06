@@ -4,33 +4,40 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import os
+import argparse
 import torch
 from tqdm import tqdm
 
 from gs2d import *
 from metrics import *
 
+# Handle command line interface
+parser = argparse.ArgumentParser(description="Fit a set of 2D Gaussians to a target image.")
+parser.add_argument('target_path', type=str)
+parser.add_argument('--n_gaussians', required=False, default=400, type=int)
+parser.add_argument('--out_width', required=False, default=200, type=int)
+parser.add_argument('--epochs', required=False, default=200, type=int)
+args = parser.parse_args()
+print("-"*40)
+
 # Set device
 device = torch.device("mps" if torch.mps.is_available() else
                       "cuda" if torch.cuda.is_available() else
                       "cpu")
 
-## ===== Initialize model and data =====
+## ===== Initialize target image and model =====
 
 # Target image
-target_path = "data/sunset.webp"
-out_width = 100
-target = load_image(target_path, width=out_width, device=device)
-print(f"Target image: {target_path}")
+target = load_image(args.target_path, width=args.out_width, device=device)
+print(f"Target image: {args.target_path}")
 
 # Initial model
 domain_grid = build_domain_grid(target.shape[0], target.shape[1], device=device)
-n_gaussians = 500
-gaussians = init_gaussians(n_gaussians, target, domain_grid, lambda_init=0.3, device=device)
+gaussians = init_gaussians(args.n_gaussians, target, domain_grid, lambda_init=0.3, device=device)
 output = render_gaussians(gaussians, domain_grid)
 
 # Initial output image
-run_dir = f"output/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{os.path.splitext(os.path.basename(target_path))[0]}"
+run_dir = f"output/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{os.path.splitext(os.path.basename(args.target_path))[0]}"
 os.makedirs(f"{run_dir}/epochs", exist_ok=True)
 anim_fig, anim_ax = plt.subplots()
 anim_ax.axis('off')
@@ -40,7 +47,6 @@ anim_fig.savefig(f"{run_dir}/epochs/epoch{0:05d}.png")
 ## ===== Optimize model =====
 
 # Training settings
-epochs = 200
 optim_params = [
     {'name': 'positions', 'params': gaussians['positions'], 'lr': 1e-2},
     {'name': 'inv_scales', 'params': gaussians['inv_scales'], 'lr': 2e0},
@@ -54,18 +60,18 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_stepsize, ga
 
 # GIF animation settings
 epochs_per_frame = 10
-save_indv_frames = False
+save_indv_frames_every = 50
 
 # Training loop
 train_stats = {
-    'target_path': target_path,
+    'target_path': args.target_path,
     'target_shape': target.shape[0:2],
     'target_edgeness': edgeness(target),
     'target_shannonentropy': shannon_entropy(target),
     'output_dir': run_dir,
     'output_shape': domain_grid.shape[0:2],
-    'n_gaussians': n_gaussians,
-    'epochs': epochs,
+    'n_gaussians': args.n_gaussians,
+    'epochs': args.epochs,
     'lr': {op['name']: op['lr'] for op in optim_params},
     'lr_stepsize': lr_stepsize,
     'lr_gamma': lr_gamma,
@@ -76,8 +82,8 @@ train_stats = {
     'psnr': [],
     'ssim': [],
 }
-print(f"Fitting target image at resolution {tuple(target.shape[0:2])} with {len(gaussians['positions'])} gaussians over {epochs} epochs.")
-for epoch in (pbar := tqdm(range(epochs))):
+print(f"Fitting target image at resolution {tuple(target.shape[0:2])} with {len(gaussians['positions'])} gaussians over {args.epochs} epochs.")
+for epoch in (pbar := tqdm(range(args.epochs))):
     # Forward
     output = render_gaussians(gaussians, domain_grid)
     loss = loss_fn(output, target, recon_type='l1', ssim_weight=0.1) # Loss from Image-GS paper
@@ -99,11 +105,11 @@ for epoch in (pbar := tqdm(range(epochs))):
     train_stats['psnr'].append(snr.item())
     train_stats['ssim'].append(ssi.item())
     # Save current output
-    if (epoch+1) % epochs_per_frame == 0 or epoch == epochs-1:
+    if (epoch+1) % epochs_per_frame == 0 or epoch == args.epochs-1:
         output_plot = output.detach().cpu().numpy().clip(0,1)
         anim_frames.append([anim_ax.imshow(output_plot)])
-        if save_indv_frames:
-            anim_fig.savefig(f"{run_dir}/epochs/epoch{epoch+1:05d}.png")
+    if (save_indv_frames_every > 0 and (epoch+1) % save_indv_frames_every == 0) or epoch == args.epochs-1:
+        anim_fig.savefig(f"{run_dir}/epochs/epoch{epoch+1:05d}.png")
 
 # Save stats
 with open(f"{run_dir}/stats.json", 'w') as f:
