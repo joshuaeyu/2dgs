@@ -64,7 +64,7 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="outp
         'target_shannon_entropy': shannon_entropy(target),
         'output_dir': run_dir,
         'output_shape': domain_grid.shape[0:2],
-        'n_gaussians': n_gaussians,
+        'n_gaussians': len(gaussians['positions']),
         'epochs': epochs,
         'lr': {op['name']: op['lr'] for op in optim_params},
         'lr_step_size': lr_step_size,

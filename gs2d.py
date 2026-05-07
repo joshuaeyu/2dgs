@@ -41,13 +41,14 @@ def init_gaussians(count, target=None, domain_grid=None, lambda_init=0.3, device
         # Content-aware initialization of positions and colors 
         with torch.no_grad():
             # Sample pixels based on P_init
+            true_count = min(count, target[...,0].numel())
             prob = _prob_init(target, lambda_init=lambda_init)
-            idxs_flat = torch.multinomial(torch.ravel(prob), count)
+            idxs_flat = torch.multinomial(torch.ravel(prob), true_count)
             idxs = torch.unravel_index(idxs_flat, target.shape[:2])
         params = dict(
             positions = domain_grid[idxs].clone().detach().requires_grad_().to(device),
-            inv_scales = torch.full((count, 2), 1.0/0.005, requires_grad=True, device=device), # sensitive to initial scales!
-            rotations = torch.zeros(count, requires_grad=True, device=device),
+            inv_scales = torch.full((true_count, 2), 1.0/0.005, requires_grad=True, device=device), # sensitive to initial scales!
+            rotations = torch.zeros(true_count, requires_grad=True, device=device),
             colors = target[idxs].clone().detach().requires_grad_().to(device)
         )
     else:
