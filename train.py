@@ -11,13 +11,14 @@ from tqdm import tqdm
 from gs2d import *
 from metrics import *
 
-def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="output/train"):
+def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="output/train", device=None):
     print("-"*40)
 
     # Set device
-    device = torch.device("mps" if torch.mps.is_available() else
-                          "cuda" if torch.cuda.is_available() else
-                          "cpu")
+    if device is None:
+        device = torch.device("mps" if torch.mps.is_available() else
+                              "cuda" if torch.cuda.is_available() else
+                              "cpu")
 
     ## ===== Initialize target image and model =====
 
@@ -142,6 +143,7 @@ if __name__=="__main__":
     parser.add_argument('--out_width', required=False, default=200, type=int)
     parser.add_argument('--epochs', required=False, default=200, type=int)
     parser.add_argument('--out_dir', required=False, default="data/train", type=str)
+    parser.add_argument('--device', required=False, default=None, type=str)
     args = parser.parse_args()
 
-    train(args.target_path, args.n_gaussians, args.out_width, args.epochs, args.out_dir)
+    train(args.target_path, args.n_gaussians, args.out_width, args.epochs, args.out_dir, args.device)
