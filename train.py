@@ -11,7 +11,7 @@ from tqdm import tqdm
 from gs2d import *
 from metrics import *
 
-def train(target_path, n_gaussians=400, out_width=200, epochs=200):
+def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="output/train"):
     print("-"*40)
 
     # Set device
@@ -31,7 +31,7 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200):
     output = render_gaussians(gaussians, domain_grid)
 
     # Initial output image
-    run_dir = f"output/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{os.path.splitext(os.path.basename(target_path))[0]}"
+    run_dir = f"{out_dir}/train_{datetime.now().strftime("%Y%m%d_%H%M%S")}_{os.path.splitext(os.path.basename(target_path))[0]}"
     os.makedirs(f"{run_dir}/epochs", exist_ok=True)
     anim_fig, anim_ax = plt.subplots()
     anim_ax.axis('off')
@@ -47,10 +47,10 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200):
         {'name': 'rotations', 'params': gaussians['rotations'], 'lr': 1e-1},
         {'name': 'colors', 'params': gaussians['colors'], 'lr': 1e-1},
     ]
-    lr_stepsize = 100
+    lr_step_size = 100
     lr_gamma = 0.5
     optimizer = torch.optim.AdamW(optim_params)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_stepsize, gamma=lr_gamma)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step_size, gamma=lr_gamma)
 
     # GIF animation settings
     epochs_per_frame = 10
@@ -61,13 +61,13 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200):
         'target_path': target_path,
         'target_shape': target.shape[0:2],
         'target_edgeness': edgeness(target),
-        'target_shannonentropy': shannon_entropy(target),
+        'target_shannon_entropy': shannon_entropy(target),
         'output_dir': run_dir,
         'output_shape': domain_grid.shape[0:2],
         'n_gaussians': n_gaussians,
         'epochs': epochs,
         'lr': {op['name']: op['lr'] for op in optim_params},
-        'lr_stepsize': lr_stepsize,
+        'lr_step_size': lr_step_size,
         'lr_gamma': lr_gamma,
         'loss_final': None,
         'psnr_final': None,
@@ -139,6 +139,7 @@ if __name__=="__main__":
     parser.add_argument('--n_gaussians', required=False, default=400, type=int)
     parser.add_argument('--out_width', required=False, default=200, type=int)
     parser.add_argument('--epochs', required=False, default=200, type=int)
+    parser.add_argument('--out_dir', required=False, default="data/train", type=str)
     args = parser.parse_args()
 
-    train(args.target_path, args.n_gaussians, args.out_width, args.epochs)
+    train(args.target_path, args.n_gaussians, args.out_width, args.epochs, args.out_dir)
