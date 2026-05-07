@@ -7,8 +7,10 @@ from metrics import *
 ## Image and domain helper functions
 
 def load_image(path, width=None, device=torch.device('cpu')):
-    """Load image as tensor. Optionally rescale."""
+    """Load image as tensor with shape (H,W,3). Optionally rescale."""
     img = Image.open(path)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
     out_scale = min(1., width/img.width) if width else 1.
     out_size = (int(img.width * out_scale), int(img.height * out_scale))
     target = torch.from_numpy(np.array(img.resize(out_size), dtype=np.float32) / 255).to(device)
