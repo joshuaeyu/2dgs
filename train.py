@@ -114,6 +114,7 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="outp
     # Save GIF
     anim = animation.ArtistAnimation(anim_fig, anim_frames)
     anim.save(f"{run_dir}/movie.gif", writer=animation.PillowWriter())
+    plt.close(anim_fig)
 
     # Save loss, PSNR, and SSIM curves
     curves_fig, curves_ax0 = plt.subplots()
@@ -128,6 +129,7 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="outp
     curves_ax1.plot(train_stats['ssim'], color='C1')
     curves_ax1.set_ylabel("SSIM")
     curves_fig.savefig(f"{run_dir}/loss_ssim.png")
+    plt.close(curves_fig)
 
     print(f"Training outputs saved to: {run_dir}")
     return train_stats
