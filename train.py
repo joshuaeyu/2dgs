@@ -119,16 +119,20 @@ def train(target_path, n_gaussians=400, out_width=200, epochs=200, out_dir="outp
 
     # Save loss, PSNR, and SSIM curves
     curves_fig, curves_ax0 = plt.subplots()
-    curves_ax0.plot(train_stats['loss'], color='C0')
+    curves_ax0.plot(train_stats['loss'], color='C0', label='Loss')
     curves_ax0.set_xlabel("Epoch")
     curves_ax0.set_ylabel("Loss")
     curves_ax1 = curves_ax0.twinx()
-    curves_ax1.plot(train_stats['psnr'], color='C1')
+    curves_ax1.plot(train_stats['psnr'], color='C1', label='PSNR')
     curves_ax1.set_ylabel("PSNR")
+    leg = curves_fig.legend()
     curves_fig.savefig(f"{run_dir}/loss_psnr.png")
     curves_ax1.clear()
-    curves_ax1.plot(train_stats['ssim'], color='C1')
+    curves_ax1.plot(train_stats['ssim'], color='C1', label='SSIM')
     curves_ax1.set_ylabel("SSIM")
+    curves_ax1.yaxis.set_label_position('right')
+    leg.remove()
+    curves_fig.legend()
     curves_fig.savefig(f"{run_dir}/loss_ssim.png")
     plt.close(curves_fig)
 
@@ -142,7 +146,7 @@ if __name__=="__main__":
     parser.add_argument('--n_gaussians', required=False, default=400, type=int)
     parser.add_argument('--out_width', required=False, default=200, type=int)
     parser.add_argument('--epochs', required=False, default=200, type=int)
-    parser.add_argument('--out_dir', required=False, default="data/train", type=str)
+    parser.add_argument('--out_dir', required=False, default="output/train", type=str)
     parser.add_argument('--device', required=False, default=None, type=str)
     args = parser.parse_args()
 
